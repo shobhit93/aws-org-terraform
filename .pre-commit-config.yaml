@@ -1,0 +1,83 @@
+repos:
+
+  # -------------------------
+  # Installation Hooks
+  # -------------------------
+  - repo: local
+    hooks:
+    - id: tools-install
+      name: Install Tools if missing
+      entry: bash scripts/install_tools.sh
+      language: system
+      always_run: true
+
+  # -------------------------
+  # Terraform Hooks
+  # -------------------------
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.104.0
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_validate
+
+  # -------------------------
+  # TFsec Security Scanning
+  # -------------------------
+  - repo: https://github.com/aquasecurity/tfsec
+    rev: v1.28.14
+    hooks:
+      - id: tfsec
+
+  # -------------------------
+  # Checkov (Deep Security Scanning)
+  # -------------------------
+  - repo: https://github.com/bridgecrewio/checkov
+    rev: 3.2.494
+    hooks:
+      - id: checkov
+        name: Checkov Scan
+        entry: checkov -d . -o sarif --config-file .checkov.yml
+        always_run: true
+
+  # -------------------------
+  # Pre-commit generic hooks
+  # -------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+        exclude: ^.terraform/
+      - id: check-merge-conflict
+
+  # -------------------------
+  # Shell Script Linting
+  # -------------------------
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+
+  # -------------------------
+  # Python Formatting (Black)
+  # -------------------------
+  - repo: https://github.com/psf/black
+    rev: 25.11.0
+    hooks:
+      - id: black
+
+  # -------------------------
+  # Trivy scan
+  # -------------------------
+  - repo: local
+    hooks:
+      # 2️⃣ Trivy IaC Scan
+      - id: trivy-iac
+        name: Trivy IaC Scan
+        entry: bash -c 'TRIVY_CHECKS_BUNDLE=off TRIVY_SKIP_POLICY_DOWNLOAD=true TRIVY_SKIP_DB_UPDATE=true TRIVY_SKIP_UPDATE=true bash scripts/trivy.sh'
+        language: system
+        always_run: true

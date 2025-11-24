@@ -1,0 +1,22 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Secrets baseline
+.secrets.baseline
+
+# HCL files (optional if you don’t want to commit them)
+*.hcl
+
+# OS / IDE / Editor files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Ignore all HCL files
+*.hcl
+
+# Ignore all SARIF files
+*.sarif
