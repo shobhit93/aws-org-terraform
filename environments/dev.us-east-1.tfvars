@@ -1,6 +1,9 @@
-cloudtrail_bucket_name = "org-cloudtrail-logs"
-
-github_role_name   = "dev-github-role"
-notification_email = "dev-team@example.com"
-
-region = "us-east-1"
+account_name      = "Dev"
+account_email     = "shobhitpan.93@gmail.com"
+budget            = 50
+github_sub        = [
+  "repo:org/shobhitp93:ref:refs/heads/feature/*",
+  "repo:org/shobhitp93:ref:refs/heads/feat/*"
+]
+enable_malware_scan = false
+malware_feed_url    = ""

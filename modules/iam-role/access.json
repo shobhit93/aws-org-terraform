@@ -1,0 +1,85 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "EKSFullAccess",
+      "Effect": "Allow",
+      "Action": "eks:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "S3FullAccess",
+      "Effect": "Allow",
+      "Action": "s3:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "IAMFullAccess",
+      "Effect": "Allow",
+      "Action": "iam:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "RDSFullAccess",
+      "Effect": "Allow",
+      "Action": "rds:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "DynamoDBFullAccess",
+      "Effect": "Allow",
+      "Action": "dynamodb:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "SecretsManagerFullAccess",
+      "Effect": "Allow",
+      "Action": "secretsmanager:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudTrailFullAccess",
+      "Effect": "Allow",
+      "Action": "cloudtrail:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "GuardDutyFullAccess",
+      "Effect": "Allow",
+      "Action": "guardduty:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "BudgetsFullAccess",
+      "Effect": "Allow",
+      "Action": "budgets:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "OrganizationsSCPManagement",
+      "Effect": "Allow",
+      "Action": [
+        "organizations:CreatePolicy",
+        "organizations:UpdatePolicy",
+        "organizations:AttachPolicy",
+        "organizations:DetachPolicy",
+        "organizations:Describe*",
+        "organizations:List*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "SupportingServices",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:*",
+        "autoscaling:*",
+        "elasticloadbalancing:*",
+        "logs:*",
+        "cloudwatch:*",
+        "kms:*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

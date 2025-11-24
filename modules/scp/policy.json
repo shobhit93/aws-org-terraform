@@ -1,0 +1,23 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyDeleteCriticalResources",
+      "Effect": "Deny",
+      "Action": [
+        "iam:Delete*",
+        "cloudtrail:DeleteTrail",
+        "s3:DeleteBucket",
+        "s3:DeleteObject",
+        "ec2:TerminateInstances",
+        "rds:DeleteDBInstance"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/priority": "critical"
+        }
+      }
+    }
+  ]
+}

@@ -32,6 +32,39 @@ aws-org-terraform/
 │       └── outputs.tf
 
 
+other option --> WIP
+
+terraform/
+├── main.tf
+├── variables.tf
+├── outputs.tf
+├── provider.tf
+├── backend.tf
+├── environments/
+│   ├── dev.tfvars
+│   └── prod.tfvars
+├── modules/
+│   ├── account/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   ├── cloudtrail/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   └── iam_role/
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
+
+Setup should look like this.
+Root (shobhit93 AWS Organization) --> create it in github-web-identity repo
+└── OU: Environments --> this here
+    ├── Account: dev
+    └── Account: prod
+
+
+
 ---
 
 ## 🏗 Architecture Description
