@@ -1,26 +1,30 @@
 resource "aws_organizations_policy" "deny_delete_tagged" {
-  name        = "DenytaggedDeletes"
-  description = "Deny all delete actions across the organization with tags"
+  name        = "DenyDeletesWithoutTag"
+  description = "Deny all delete actions across the organization unless the resource has tag priority=critical"
   type        = "SERVICE_CONTROL_POLICY"
 
   content = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17",
     Statement = [
       {
-        Sid      = "DenyAllDeletes"
         Effect   = "Deny"
-        Action   = ["*:Delete*"]
+        Action   = [
+          "s3:DeleteObject",
+          "ec2:TerminateInstances",
+          "rds:DeleteDBInstance",
+          "dynamodb:DeleteTable",
+          "lambda:DeleteFunction"
+        ]
         Resource = "*"
         Condition = {
-          StringEquals = {
-            "aws:ResourceTag/priority": "critical"
+          Null = {
+            "aws:RequestTag/nodelete" = true
           }
         }
       }
     ]
   })
 }
-
 
 resource "aws_organizations_policy_attachment" "attach_deny_delete_tagged" {
   policy_id = aws_organizations_policy.deny_delete_tagged.id

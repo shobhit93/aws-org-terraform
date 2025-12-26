@@ -64,6 +64,10 @@ data "aws_caller_identity" "org_home" {
   provider = aws.org_home
 }
 
+data "aws_organizations_organization" "org" {
+  provider = aws.management
+}
+
 # --------------------------
 # 1️⃣ Organization (Root Account)
 # --------------------------
@@ -83,7 +87,7 @@ module "infra_ou" {
     aws = aws.management
   }
   name      = "Infra"
-  parent_id = module.organization.organization_id
+  parent_id = data.aws_organizations_organization.org.roots[0].id
 }
 
 # --------------------------
@@ -95,7 +99,7 @@ module "org_scp" {
     aws = aws.management
   }
   # Example: SCPs for Org-level minimal guardrails
-  target_id = module.organization.organization_id
+  target_id = module.infra_ou.ou_id
 }
 
 # --------------------------
