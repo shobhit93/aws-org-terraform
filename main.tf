@@ -37,6 +37,19 @@ provider "aws" {
 }
 
 # -------------------------------
+# Organization Home Region Provider
+# -------------------------------
+
+provider "aws" {
+  alias  = "org_home"
+  region = "ap-northeast-1"
+
+  assume_role {
+    role_arn = var.management_role_arn
+  }
+}
+
+# -------------------------------
 # Default AWS provider
 # -------------------------------
 provider "aws" {
@@ -87,7 +100,7 @@ module "org_scp" {
 module "cloudtrail" {
   source = "./modules/cloudtrail_org"
   providers = {
-    aws = aws.management
+    aws = aws.org_home
   }
   name               = "org-cloudtrail"
   data_events        = [] # Disabled by default
