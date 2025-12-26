@@ -5,34 +5,24 @@ resource "aws_organizations_policy" "deny_delete_tagged" {
 
   content = jsonencode({
     Version = "2012-10-17",
-    Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Deny"
+        Effect   = "Deny",
         Action   = [
           "s3:DeleteObject",
           "ec2:TerminateInstances",
           "rds:DeleteDBInstance",
           "dynamodb:DeleteTable",
-          "lambda:DeleteFunction"
-        ]
-        Action   = [
-          "s3:DeleteObject",
-          "ec2:TerminateInstances",
-          "rds:DeleteDBInstance",
-          "dynamodb:DeleteTable",
-          "lambda:DeleteFunction"
-        ]
-        Resource = "*"
+          "lambda:DeleteFunction",
+        ],
+        Resource = "*",
         Condition = {
           Null = {
-            "aws:RequestTag/nodelete" = true
-          Null = {
-            "aws:RequestTag/nodelete" = true
-          }
-        }
-      }
-    ]
+            "aws:RequestTag/nodelete" = true,
+          },
+        },
+      },
+    ],
   })
 }
 
