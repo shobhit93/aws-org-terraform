@@ -106,7 +106,7 @@ module "cloudtrail" {
   data_events        = [] # Disabled by default
   enable_cloudwatch  = false
   enable_data_events = false
-  s3_bucket_name     = "org-cloudtrail-logs"
+  s3_bucket_name     = "org-cloudtrail-logs-${data.aws_caller_identity.current.account_id}"
 }
 
 # --------------------------
