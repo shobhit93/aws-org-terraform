@@ -13,9 +13,11 @@ on:
         type: choice
         options:
           - us-east-1
-          - eu-west-1
-
-
+      extra_terraform_cmd:
+        description: "Optional Terraform command to run (e.g., 'terraform force-unlock <LOCK_ID>')"
+        required: false
+        default: null
+        type: string
 
 jobs:
   terraform:
@@ -26,11 +28,6 @@ jobs:
       contents: read
       actions: read
       id-token: write    # REQUIRED for AWS OIDC authentication
-
-    env:
-      TF_WORKING_DIR: ./terraform
-      AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
     steps:
       # ---------------------------
@@ -63,11 +60,16 @@ jobs:
         id: vars
         run: |
           # Detect env based on branch
+          ENV="dev"
+
           if [[ "${GITHUB_REF##*/}" == "main" ]]; then
             ENV="prod"
-          else
-            ENV="dev"
           fi
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" && "$GITHUB_BASE_REF" == "main" ]]; then
+            ENV="prod"
+          fi
+
+          echo "Selected environment: $ENV"
 
           REGION="${{ github.event.inputs.region || 'us-east-1' }}"
           FILE="${ENV}.${REGION}.tfvars"
@@ -81,23 +83,30 @@ jobs:
       # Terraform Init
       # ---------------------------
       - name: Terraform Init
-        working-directory: ${{ env.TF_WORKING_DIR }}
         run: |
           terraform init \
-            -backend-config="bucket=github-aws-web-identity-terraform-state" \
+            -backend-config="bucket=aws-org-terraform-terraform-state" \
             -backend-config="key=${{ steps.vars.outputs.env }}/${{ steps.vars.outputs.region }}/terraform.tfstate" \
             -backend-config="region=us-east-1" \
             -backend-config="dynamodb_table=tf-locks" \
             -backend-config="encrypt=true"
 
       # ---------------------------
+      # Optional extra Terraform command
+      # ---------------------------
+      - name: Run Extra Terraform Command
+        if: ${{ github.event.inputs.extra_terraform_cmd != null && github.event.inputs.extra_terraform_cmd != '' }}
+        run: |
+          echo "Running extra Terraform command: ${{ github.event.inputs.extra_terraform_cmd }}"
+          ${{ github.event.inputs.extra_terraform_cmd }}            
+
+      # ---------------------------
       # Terraform Plan (all branches)
       # ---------------------------
       - name: Terraform Plan
-        working-directory: ${{ env.TF_WORKING_DIR }}
         run: |
           terraform plan \
-            -var-file="environments${{ steps.vars.outputs.tfvars_file }}" \
+            -var-file="environments/${{ steps.vars.outputs.tfvars_file }}" \
             -out="tfplan"
 
       # Upload plan for PR or logs
@@ -105,7 +114,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
-          path: ${{ env.TF_WORKING_DIR }}/tfplan   
+          path: tfplan   
 
       # ---------------------------
       # Manual approval ONLY on main before apply
@@ -137,5 +146,4 @@ jobs:
       # ---------------------------
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main'
-        working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform apply -auto-approve tfplan

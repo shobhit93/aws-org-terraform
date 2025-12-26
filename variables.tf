@@ -1,21 +1,27 @@
-# AWS Account
-variable "github_role_name" {
-  description = "Name of the GitHub OIDC role to create in the child account"
+variable "account_name" {}
+variable "account_email" {}
+variable "github_sub" {
+  type = list(string)
 }
-variable "notification_email" {
-  description = "Email address for notifications"
+variable "budget" {
+  type = number
 }
-variable "account_name" {
-  description = "Name of the AWS account to create"
+variable "enable_malware_scan" {
+  type    = bool
+  default = false
+}
+variable "malware_feed_url" {
+  type    = string
+  default = ""
 }
 
-# Region for child accounts
-variable "region" {
-  description = "AWS region for the child account resources"
-  default     = "us-east-1"
+variable "aws_region" {
+  type    = string
+  default = "us-east-1"
 }
 
-# CloudTrail bucket
-variable "cloudtrail_bucket_name" {
-  description = "Name of the S3 bucket for CloudTrail logs"
+variable "management_role_arn" {
+  description = "Optional role ARN in management account if not using root credentials"
+  type        = string
+  default     = ""
 }

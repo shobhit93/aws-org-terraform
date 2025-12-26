@@ -1,110 +1,160 @@
 terraform {
   required_version = ">= 1.5.0"
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 5.37"
+      version = ">= 5.0"
     }
+  }
+
+  backend "s3" {}
+}
+
+# -------------------------------
+# Management / Root Account
+# -------------------------------
+provider "aws" {
+  alias  = "management"
+  region = var.aws_region
+
+  # Optional: if you have a dedicated management role instead of root credentials
+  assume_role {
+    role_arn = var.management_role_arn
   }
 }
 
-# ----------------------------------------
-# Root account provider
-# ----------------------------------------
+# -------------------------------
+# Child Account (Dev / Prod)
+# -------------------------------
 provider "aws" {
-  alias  = "root"
-  region = "us-east-1"
+  alias  = "child"
+  region = var.aws_region
+
+  assume_role {
+    role_arn = local.child_role_arn # OrganizationAccountAccessRole
+  }
 }
 
-# ----------------------------------------
-# 1️⃣ Create AWS Organization
-# ----------------------------------------
-resource "aws_organizations_organization" "org" {
-  provider    = aws.root
-  feature_set = "ALL"
-}
-
-# Fetch root ID dynamically
-data "aws_organizations_organization" "current" {
-  provider = aws.root
+# -------------------------------
+# Default AWS provider
+# -------------------------------
+provider "aws" {
+  region = var.aws_region
 }
 
 locals {
-  root_id = data.aws_organizations_organization.current.roots[0].id
+  child_role_arn = "arn:aws:iam::${module.account.account_id}:role/OrganizationAccountAccessRole"
 }
 
-# ----------------------------------------
-# 2️⃣ SCP to deny delete actions
-# ----------------------------------------
-resource "aws_organizations_policy" "deny_delete_iam" {
-  provider = aws.root
-  name     = "DenyDeleteIAM"
-  type     = "SERVICE_CONTROL_POLICY"
-
-  content = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Effect   = "Deny"
-      Action   = [
-        "iam:DeleteRole",
-        "iam:DeleteRolePolicy",
-        "iam:DeleteUser",
-        "iam:DeleteUserPolicy",
-        "iam:DeleteGroup",
-        "iam:DeleteGroupPolicy",
-        "iam:DeletePolicy",
-        "iam:DeleteAccessKey",
-        "iam:DeleteSigningCertificate",
-        "iam:DeleteLoginProfile",
-        "iam:DeleteAccountAlias",
-        "iam:RemoveRoleFromInstanceProfile",
-        "iam:RemoveUserFromGroup"
-      ]
-      Resource = "*"
-    }]
-  })
+# --------------------------
+# 1️⃣ Organization (Root Account)
+# --------------------------
+module "organization" {
+  providers = {
+    aws = aws.management
+  }
+  source = "./modules/organization"
 }
 
-
-resource "aws_organizations_policy_attachment" "attach_root" {
-  provider  = aws.root
-  policy_id = aws_organizations_policy.deny_delete_iam.id
-  target_id = local.root_id
+# --------------------------
+# 2️⃣ Infra OU
+# --------------------------
+module "infra_ou" {
+  source = "./modules/ou"
+  providers = {
+    aws = aws.management
+  }
+  name      = "Infra"
+  parent_id = module.organization.organization_id
 }
 
-# ----------------------------------------
-# 3️⃣ Organization-wide CloudTrail
-# ----------------------------------------
-resource "aws_s3_bucket" "trail_bucket" {
-  provider = aws.root
-  bucket   = var.cloudtrail_bucket_name
+# --------------------------
+# 3️⃣ Org-level SCPs (minimal guardrails)
+# --------------------------
+module "org_scp" {
+  source = "./modules/scp"
+  providers = {
+    aws = aws.management
+  }
+  # Example: SCPs for Org-level minimal guardrails
+  target_id = module.organization.organization_id
 }
 
-resource "aws_cloudtrail" "org_trail" {
-  provider                      = aws.root
-  name                          = "org-trail"
-  is_organization_trail         = true
-  s3_bucket_name                = aws_s3_bucket.trail_bucket.id
-  include_global_service_events = true
-  is_multi_region_trail         = true
+# --------------------------
+# 4️⃣ Org-level CloudTrail
+# --------------------------
+module "cloudtrail" {
+  source = "./modules/cloudtrail_org"
+  providers = {
+    aws = aws.management
+  }
+  name               = "org-cloudtrail"
+  data_events        = [] # Disabled by default
+  enable_cloudwatch  = false
+  enable_data_events = false
+  s3_bucket_name     = "org-cloudtrail-logs"
 }
 
-# ----------------------------------------
-# 4️⃣ Create account
-# ----------------------------------------
-resource "aws_organizations_account" "account" {
-  provider  = aws.root
+# --------------------------
+# 5️⃣ AWS Account (Dev / Prod)
+# --------------------------
+module "account" {
+  source = "./modules/account"
+  providers = {
+    aws = aws.management
+  }
   name      = var.account_name
-  email     = var.notification_email
-  role_name = "OrganizationAccountAccessRole"
+  email     = var.account_email
+  parent_id = module.infra_ou.ou_id
 }
 
-# ----------------------------------------
-# 5️⃣ Deploy child account resources via modules
-# ----------------------------------------
-module "aws_account" {
-  source           = "./modules/aws-child-account"
-  child_account_id = aws_organizations_account.account.id
-  github_role_name = var.github_role_name
-  notification_email = var.notification_email
+# --------------------------
+# 6️⃣ Account-level SCPs (deny delete for critical)
+# --------------------------
+module "scp" {
+  source = "./modules/scp"
+  providers = {
+    aws = aws.management
+  }
+  target_id = module.account.account_id
+}
+
+# --------------------------
+# 7️⃣ IAM Role (Least Privilege)
+# --------------------------
+module "iam_role" {
+  source = "./modules/iam-role"
+  providers = {
+    aws = aws.child
+  }
+  role_name   = "${var.account_name}-LeastPrivRole"
+  github_sub  = var.github_sub
+  policy_json = file("${path.module}/modules/iam-role/access.json")
+}
+
+# --------------------------
+# 9️⃣ GuardDuty
+# --------------------------
+module "guardduty" {
+  source = "./modules/guardduty"
+  providers = {
+    aws = aws.child
+  }
+  enable_malware_scan = var.enable_malware_scan
+  malware_feed_url    = var.malware_feed_url
+}
+
+# --------------------------
+# 🔟 Budget
+# --------------------------
+module "budget" {
+  source = "./modules/budget"
+  providers = {
+    aws = aws.child
+  }
+  name            = "${var.account_name}-Budget"
+  limit           = var.budget
+  alert_threshold = 80
+  email           = var.account_email
 }
