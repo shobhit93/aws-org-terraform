@@ -1,5 +1,5 @@
 account_name      = "Dev"
-account_email     = "shobhitpan.93@gmail.com"
+account_email     = "shobhitp.93@gmail.com"
 budget            = 50
 github_sub        = [
   "repo:org/shobhitp93:ref:refs/heads/feature/*",

@@ -2,10 +2,14 @@ resource "aws_s3_bucket" "trail_bucket" {
   bucket = var.s3_bucket_name
 }
 
-resource "aws_s3_bucket_acl" "trail_bucket_acl" {
+resource "aws_s3_bucket_ownership_controls" "trail_bucket" {
   bucket = aws_s3_bucket.trail_bucket.id
-  acl    = "private"
+
+  rule {
+    object_ownership = "BucketOwnerEnforced"
+  }
 }
+
 
 resource "aws_cloudtrail" "org_trail" {
   name                          = var.name
