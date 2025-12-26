@@ -100,6 +100,7 @@ module "org_scp" {
   }
   # Example: SCPs for Org-level minimal guardrails
   target_id = module.infra_ou.ou_id
+  depends_on = [module.organization]
 }
 
 # --------------------------
@@ -139,6 +140,7 @@ module "scp" {
     aws = aws.management
   }
   target_id = module.account.account_id
+  depends_on = [module.organization]
 }
 
 # --------------------------
