@@ -60,6 +60,10 @@ locals {
   child_role_arn = "arn:aws:iam::${module.account.account_id}:role/OrganizationAccountAccessRole"
 }
 
+data "aws_caller_identity" "org_home" {
+  provider = aws.org_home
+}
+
 # --------------------------
 # 1️⃣ Organization (Root Account)
 # --------------------------
@@ -106,7 +110,7 @@ module "cloudtrail" {
   data_events        = [] # Disabled by default
   enable_cloudwatch  = false
   enable_data_events = false
-  s3_bucket_name     = "org-cloudtrail-logs-${data.aws_caller_identity.current.account_id}"
+  s3_bucket_name     = "org-cloudtrail-logs-${data.aws_caller_identity.org_home.account_id}"
 }
 
 # --------------------------

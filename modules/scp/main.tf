@@ -1,6 +1,6 @@
-resource "aws_organizations_policy" "deny_delete_all" {
-  name        = "DenyAllDeletes"
-  description = "Deny all delete actions across the organization"
+resource "aws_organizations_policy" "deny_delete_tagged" {
+  name        = "DenytaggedDeletes"
+  description = "Deny all delete actions across the organization with tags"
   type        = "SERVICE_CONTROL_POLICY"
 
   content = jsonencode({
