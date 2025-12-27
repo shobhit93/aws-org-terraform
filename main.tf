@@ -32,7 +32,7 @@ provider "aws" {
   region = var.aws_region
 
   assume_role {
-    role_arn = "arn:aws:iam::${module.account.account_id}:role/TerraformExecutionRole"
+    role_arn = "arn:aws:iam::${module.account.account_id}:role/OrganizationAccountAccessRole"
   }
 }
 
