@@ -52,9 +52,3 @@ resource "aws_iam_role_policy" "this" {
   role  = aws_iam_role.this.id
   policy = var.policy_json
 }
-
-resource "aws_iam_role_policy_attachment" "github_actions_attach" {
-  role       = aws_iam_role.this.name
-  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
-}
-

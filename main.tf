@@ -32,7 +32,7 @@ provider "aws" {
   region = var.aws_region
 
   assume_role {
-    role_arn = local.child_role_arn
+    role_arn = aws_iam_role.terraform_child.arn
   }
 }
 
@@ -56,12 +56,12 @@ provider "aws" {
   region = var.aws_region
 }
 
-locals {
-  child_role_arn = "arn:aws:iam::${module.account.account_id}:role/OrganizationAccountAccessRole"
-}
-
 data "aws_caller_identity" "org_home" {
   provider = aws.org_home
+}
+
+data "aws_caller_identity" "management" {
+  provider = aws.management
 }
 
 data "aws_organizations_organization" "org" {
@@ -142,6 +142,34 @@ module "scp" {
   target_id = module.account.account_id
   depends_on = [module.organization]
 }
+
+# --------------------------
+# IAM Role for Terraform in Child Account (Admin Access)
+# --------------------------
+resource "aws_iam_role" "terraform_child" {
+  provider = aws.management
+  name     = "TerraformExecutionRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        AWS = "arn:aws:iam::${data.aws_caller_identity.management.account_id}:role/github-actions-terraform-role"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+
+  depends_on = [module.account]
+}
+
+resource "aws_iam_role_policy_attachment" "terraform_child_admin" {
+  provider   = aws.management
+  role       = aws_iam_role.terraform_child.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
 
 # --------------------------
 # 7️⃣ IAM Role (Least Privilege)
