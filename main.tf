@@ -32,7 +32,7 @@ provider "aws" {
   region = var.aws_region
 
   assume_role {
-    role_arn = local.child_role_arn # OrganizationAccountAccessRole
+    role_arn = module.iam_role.role_arn
   }
 }
 
