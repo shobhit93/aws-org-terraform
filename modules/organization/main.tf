@@ -4,5 +4,6 @@ resource "aws_organizations_organization" "this" {
     "cloudtrail.amazonaws.com",
     "guardduty.amazonaws.com"
   ]
+  enabled_policy_types = ["SERVICE_CONTROL_POLICY", "TAG_POLICY"]
 }
 
