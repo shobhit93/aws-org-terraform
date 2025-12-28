@@ -1,9 +1,9 @@
 data "aws_caller_identity" "current" {
-  provider = aws
+  provider = aws.child
 }
 
 resource "aws_budgets_budget" "budget" {
-  provider   = aws
+  provider   = aws.child
   name        = var.name
   account_id = data.aws_caller_identity.current.account_id  
   budget_type = "COST"
