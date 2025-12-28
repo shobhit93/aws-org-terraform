@@ -1,5 +1,11 @@
+data "aws_caller_identity" "current" {
+  provider = aws
+}
+
 resource "aws_budgets_budget" "budget" {
+  provider   = aws
   name        = var.name
+  account_id = data.aws_caller_identity.current.account_id  
   budget_type = "COST"
   limit_amount = var.limit
   limit_unit   = "USD"
